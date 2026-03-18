@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimPatient — API Tester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <!-- ═══════════════════ TOP HEADER ═══════════════════ -->
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <span class="logo-text">SimPatient <span class="logo-badge">API Tester</span></span>
+        </div>
+        <div class="top-bar-right" id="session-status" data-active="false">
+            <div class="timer-display hidden" id="timer-display">
+                <span class="timer-icon">⏱️</span>
+                <span id="timer-text">10:00</span>
+            </div>
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">No active session</span>
+        </div>
+    </header>
+
+    <!-- ═══════════════════ MAIN LAYOUT ═══════════════════ -->
+    <div class="layout">
+
+        <!-- ──── LEFT SIDEBAR ──── -->
+        <aside class="sidebar">
+            <section class="sidebar-section">
+                <div class="section-heading">Session Config</div>
+
+                <label class="field-label">Condition</label>
+                <input class="field-input" id="condition" type="text" placeholder="Depression, Anxiety…"
+                    value="Depression">
+
+                <label class="field-label">Language</label>
+                <select class="field-input" id="language">
+                    <option value="English">English</option>
+                    <option value="Arabic">Arabic</option>
+                </select>
+
+                <button class="btn btn-primary" id="btn-start">▶ Start Session</button>
+                <button class="btn btn-danger hidden" id="btn-delete">✕ Delete Session</button>
+            </section>
+
+            <section class="sidebar-section">
+                <div class="section-heading">LLM Overrides <span class="hint">optional</span></div>
+
+                <label class="field-label">Model</label>
+                <input class="field-input" id="model-override" type="text" placeholder="default">
+
+                <label class="field-label">Reasoning Effort</label>
+                <select class="field-input" id="reasoning-override">
+                    <option value="">default</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                </select>
+            </section>
+
+            <section class="sidebar-section inspector-section">
+                <div class="section-heading inspector-heading" id="toggle-inspector">
+                    API Inspector <span class="chevron" id="inspector-chevron">▶</span>
+                </div>
+                <div id="inspector-body" class="inspector-body hidden">
+                    <div class="inspector-meta" id="inspector-meta">—</div>
+                    <pre class="inspector-json" id="inspector-json">Click any button to see the API response here.</pre>
+                </div>
+            </section>
+        </aside>
+
+        <!-- ──── MAIN PANEL ──── -->
+        <main class="main-panel">
+
+            <!-- Tab Nav -->
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+                <button class="tab-btn" data-tab="patient-eval">🩺 Patient Eval</button>
+                <button class="tab-btn" data-tab="trainee-eval">📋 Trainee Eval</button>
+            </nav>
+
+            <!-- ── TAB 1: CHAT ── -->
+            <div class="tab-pane active" id="tab-chat">
+                <!-- Patient Profile Section -->
+                <div class="profile-section hidden" id="profile-section">
+                    <div class="profile-header">
+                        <h3>Patient Profile (Examiner View)</h3>
+                        <button class="profile-toggle" id="profile-toggle">▼</button>
+                    </div>
+                    <div class="profile-content" id="profile-content">
+                        <div class="profile-grid">
+                            <div class="profile-card">
+                                <h4>Demographics</h4>
+                                <div class="profile-item">
+                                    <span class="label">Age:</span>
+                                    <span class="value" id="profile-age">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Gender:</span>
+                                    <span class="value" id="profile-gender">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Occupation:</span>
+                                    <span class="value" id="profile-occupation">—</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-card">
+                                <h4>Clinical Presentation</h4>
+                                <div class="profile-item">
+                                    <span class="label">Chief Complaint:</span>
+                                    <span class="value" id="profile-chief-complaint">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Severity:</span>
+                                    <span class="value" id="profile-severity">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Onset:</span>
+                                    <span class="value" id="profile-onset">—</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-card">
+                                <h4>Communication Style</h4>
+                                <div class="profile-item">
+                                    <span class="label">Response Style:</span>
+                                    <span class="value" id="profile-response-style">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Emotional Tone:</span>
+                                    <span class="value" id="profile-emotional-tone">—</span>
+                                </div>
+                                <div class="profile-item">
+                                    <span class="label">Risk Status:</span>
+                                    <span class="value risk-indicator" id="profile-risk">—</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-details" id="profile-risk-detail" style="display: none;">
+                            <strong>Risk Detail:</strong> <span id="profile-risk-text"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-area" id="chat-area">
+                    <div class="empty-state" id="chat-empty">
+                        <div class="empty-icon">🏥</div>
+                        <h3>Ready to start</h3>
+                        <p>Configure your session in the sidebar<br>and click <strong>Start Session</strong>.</p>
+                    </div>
+                </div>
+                <div class="chat-input-bar">
+                    <textarea id="chat-input" placeholder="Type your message… (Enter to send, Shift+Enter for new line)"
+                        rows="1" disabled></textarea>
+                    <button class="send-btn" id="btn-send" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── TAB 2: PATIENT EVAL ── -->
+            <div class="tab-pane" id="tab-patient-eval">
+                <div class="eval-panel">
+                    <div class="eval-config-area">
+                        <h2 class="eval-title">Patient Evaluation</h2>
+                        <p class="eval-desc">Uses <strong>DeepEval</strong> to grade how well the simulated patient
+                            stayed in character and maintained conversation quality. Requires
+                            <code>OPENAI_API_KEY</code>.
+                        </p>
+
+                        <div class="config-grid">
+                            <div>
+                                <label class="field-label">Role Adherence Threshold</label>
+                                <div class="slider-row">
+                                    <input type="range" min="0" max="1" step="0.05" value="0.7" id="role-thresh"
+                                        class="slider">
+                                    <span class="slider-val" id="role-thresh-val">0.70</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Conversation Quality Threshold</label>
+                                <div class="slider-row">
+                                    <input type="range" min="0" max="1" step="0.05" value="0.7" id="convo-thresh"
+                                        class="slider">
+                                    <span class="slider-val" id="convo-thresh-val">0.70</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary eval-run-btn" id="btn-eval-patient" disabled>Run Patient
+                            Evaluation</button>
+                    </div>
+
+                    <div class="eval-results-area hidden" id="patient-results">
+                        <div class="results-header">
+                            <h3>Results</h3>
+                            <span class="results-session-id" id="patient-results-sid"></span>
+                        </div>
+                        <div id="patient-results-body"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TAB 3: TRAINEE EVAL ── -->
+            <div class="tab-pane" id="tab-trainee-eval">
+                <div class="eval-panel">
+                    <div class="eval-config-area">
+                        <h2 class="eval-title">Trainee Evaluation</h2>
+                        <p class="eval-desc">The <strong>LLM Judge</strong> grades the trainee's interview against the
+                            rubric, then the <strong>deterministic scorer</strong> calculates the final pass/fail score.
+                        </p>
+
+                        <div class="config-grid">
+                            <div>
+                                <label class="field-label">Judge Model <span class="hint">optional
+                                        override</span></label>
+                                <input type="text" class="field-input" id="judge-model"
+                                    placeholder="default judge model">
+                            </div>
+                            <div>
+                                <label class="field-label">Rubric Path <span class="hint">optional
+                                        override</span></label>
+                                <input type="text" class="field-input" id="rubric-path"
+                                    placeholder="rubrics/psychiatry_intake.json">
+                            </div>
+                            <div>
+                                <label class="field-label">Judge Temperature</label>
+                                <div class="slider-row">
+                                    <input type="range" min="0" max="1" step="0.05" value="0" id="judge-temp"
+                                        class="slider">
+                                    <span class="slider-val" id="judge-temp-val">0.00</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Strict Schema</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="strict-schema" checked>
+                                    <span class="toggle-track"></span>
+                                    <span class="toggle-label">Enabled</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary eval-run-btn" id="btn-eval-trainee" disabled>Run Trainee
+                            Evaluation</button>
+                    </div>
+
+                    <div class="eval-results-area hidden" id="trainee-results">
+                        <div class="results-header">
+                            <h3>Results</h3>
+                            <span class="results-session-id" id="trainee-results-sid"></span>
+                        </div>
+                        <div id="trainee-results-body"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ═══════════════════ RESULTS PANEL ═══════════════════ -->
+    <aside class="results-panel hidden" id="results-panel">
+        <div class="results-header">
+            <h2>Session Results</h2>
+            <button class="close-btn" id="close-results">✕</button>
+        </div>
+        <div class="results-content">
+            <div class="results-section">
+                <h3>Strengths</h3>
+                <ul id="strengths-list"></ul>
+            </div>
+            <div class="results-section">
+                <h3>Weaknesses</h3>
+                <ul id="weaknesses-list"></ul>
+            </div>
+            <div class="results-section">
+                <h3>Improvement Suggestions</h3>
+                <textarea id="improvement-text" readonly></textarea>
+            </div>
+        </div>
+    </aside>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

@@ -1,2 +1,0 @@
-# animated-doodle
-animated-doodle

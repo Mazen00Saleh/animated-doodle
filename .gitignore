@@ -1,0 +1,19 @@
+# Local Environments
+venv/
+.venv/
+
+# Environment Variables
+.env
+
+# Local Databases
+*.db
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
